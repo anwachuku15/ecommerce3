@@ -10,11 +10,11 @@ def accept_refund(modeladmin, request, queryset):
 accept_refund.short_description = 'Accept refund requests'
 
 
-# def order_en_route(modeladmin, request, queryset):
-#     queryset.update(being_delivered=True)
+def order_en_route(modeladmin, request, queryset):
+    queryset.update(being_delivered=True)
 
 
-# order_en_route.short_description = 'Being delivered'
+order_en_route.short_description = 'Being delivered'
 
 
 class OrderAdmin(admin.ModelAdmin):
@@ -47,7 +47,7 @@ class OrderAdmin(admin.ModelAdmin):
         'ref_code',
     ]
 
-    actions = [accept_refund]
+    actions = [accept_refund, order_en_route]
 
 
 admin.site.register(Item)
