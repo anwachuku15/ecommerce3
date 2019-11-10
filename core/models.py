@@ -117,7 +117,7 @@ Order Management System: Order Life-Cycle
 (Preprocessing, processing, packaging, etc.)
 4. Being delivered (tracker/order status)
 5. Order received
-6. Refunds
+6. Refunds -
 '''
 
 

@@ -4,7 +4,7 @@ from django_countries.widgets import CountrySelectWidget
 
 # Figure out how to conditionally provide State dropdown
 # If country == United States:
-# State --> hidden=False
+# State ---> hidden=False
 
 PAYMENT_CHOICES = (
     ('S', 'Stripe'),
