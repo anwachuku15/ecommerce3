@@ -60,6 +60,27 @@ class CheckoutView(View):
                 'order': order,
                 'DISPLAY_COUPON_FORM': True
             }
+
+            # Update context if we have a default shipping address --> remove shipping form
+            shipping_address_qs = Address.objects.filter(
+                user=self.request.user,
+                address_type='S',
+                default=True
+            )
+            if shipping_address_qs.exists():
+                context.update(
+                    {'default_shipping_address': shipping_address_qs[0]})
+
+            # Update context if we have a default billing address --> remove billing form
+            billing_address_qs = Address.objects.filter(
+                user=self.request.user,
+                address_type='B',
+                default=True
+            )
+            if billing_address_qs.exists():
+                context.update(
+                    {'default_billing_address': billing_address_qs[0]})
+
             return render(self.request, 'checkout.html', context)
         except ObjectDoesNotExist:
             messages.warning(self.request, "You do not have an active order")
@@ -80,10 +101,7 @@ class CheckoutView(View):
                 apartment_address = form.cleaned_data.get('apartment_address')
                 country = form.cleaned_data.get('country')
                 zip = form.cleaned_data.get('zip')
-                # TODO: add functionality for these fields
-                # same_shipping_address = form.cleaned_data.get(
-                #     'same_shipping_address')
-                # save_info = form.cleaned_data.get('save_info')
+
                 payment_option = form.cleaned_data.get('payment_option')
                 billing_address = Address(
                     user=self.request.user, street_address=street_address, apartment_address=apartment_address, country=country, zip=zip, address_type='B')
@@ -346,6 +364,8 @@ def get_coupon(request, code):
     except ObjectDoesNotExist:
         messages.warning(request, "This coupon does not exist")
         return redirect('core:checkout')
+
+# TODO: Remove coupon
 
 
 class AddCouponView(View):
