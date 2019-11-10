@@ -18,4 +18,5 @@ urlpatterns = [
          remove_single_item, name='remove-single-item'),
     path('remove-items/<slug>', remove_items, name='remove-items'),
     path('payment/<payment_option>/', PaymentView.as_view(), name='payment'),
+    path('request-refund', RequestRefundView.as_view(), name='request-refund'),
 ]
