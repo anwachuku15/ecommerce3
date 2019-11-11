@@ -48,6 +48,14 @@ class OrderSummaryView(LoginRequiredMixin, View):
             return redirect("/")
 
 
+def is_valid_form(values):
+    valid = True
+    for field in values:
+        if field == '':
+            valid = False
+    return valid
+
+
 class CheckoutView(View):
     def get(self, *args, **kwargs):
         try:
@@ -86,7 +94,6 @@ class CheckoutView(View):
             messages.warning(self.request, "You do not have an active order")
             return redirect('core:checkout')
 
-    # For debugging: print statements
     def post(self, *args, **kwargs):
         form = CheckoutForm(self.request.POST or None)
         # Try to get order based on the user
@@ -95,20 +102,162 @@ class CheckoutView(View):
 
             # if form is valid, enter form data into database
             if form.is_valid():
-                # print(form.cleaned_data)
-                # print("The form is valid")
-                street_address = form.cleaned_data.get('street_address')
-                apartment_address = form.cleaned_data.get('apartment_address')
-                country = form.cleaned_data.get('country')
-                zip = form.cleaned_data.get('zip')
+                use_default_shipping = form.cleaned_data.get(
+                    'use_default_shipping')
+
+                # If use_default_shipping was selected:
+                if use_default_shipping:
+                    print('Using default shipping address')
+                    # Search for address with type 'S' and default=True
+                    address_qs = Address.objects.filter(
+                        user=self.request.user,
+                        address_type='S',
+                        default=True
+                    )
+                    # If it exists, use that address to autofill
+                    if address_qs.exists():
+                        shipping_address = address_qs[0]
+                        order.shipping_address = shipping_address
+                        order.save()
+                    else:
+                        messages.info(
+                            self.request, 'No default shipping address available')
+                        return redirect('core:checkout')
+
+                # If use_default_shipping was not selected, user enters new address
+                else:
+                    print("User is entering a new shipping address")
+                    shipping_address1 = form.cleaned_data.get(
+                        'shipping_address')
+                    shipping_address2 = form.cleaned_data.get(
+                        'shipping_address2')
+                    shipping_country = form.cleaned_data.get(
+                        'shipping_country')
+                    shipping_zip = form.cleaned_data.get('shipping_zip')
+
+                    # Use is_valid_form() function to check for empty fields
+                    # Because some fields are required=False in forms.py
+                    if is_valid_form([shipping_address1, shipping_country, shipping_zip]):
+                        # Enter form data into database
+                        shipping_address = Address(
+                            user=self.request.user,
+                            street_address=shipping_address1,
+                            apartment_address=shipping_address2,
+                            country=shipping_country,
+                            zip=shipping_zip,
+                            address_type='S'
+                        )
+                        shipping_address.save()
+
+                        order.shipping_address = shipping_address
+                        order.save()
+
+                        # Check if set shipping default was checked,
+                        # and if so, set it as the default and save
+                        set_default_shipping = form.cleaned_data.get(
+                            'set_default_shipping')
+                        if set_default_shipping:
+                            print('User set default shipping')
+                            shipping_address.default = True
+                            shipping_address.save()
+                    # If form isn't valid (empty)
+                    else:
+                        messages.warning(
+                            self.request, "Please fill in the required shipping address fields")
+                        return redirect('core:checkout')
+
+                use_default_billing = form.cleaned_data.get(
+                    'use_default_billing')
+                same_billing_address = form.cleaned_data.get(
+                    'same_billing_address')
+
+                # If same_billing_address was selected,
+                # set billing_address to shipping_address and save the order
+                if same_billing_address:
+                    print('Using same billing address as shipping')
+                    billing_address = shipping_address
+                    # Clone to remove primary key, then change type to B, then save
+                    billing_address.pk = None
+                    billing_address.save()
+                    billing_address.address_type = 'B'
+                    billing_address.default = False
+                    billing_address.save()
+                    order.billing_address = billing_address
+                    order.save()
+
+                    # TODO: Decide if this code stays (must click billing default)
+                    # This code is related to line 183 (billing_address.default = False)
+                    # Decide if HTML jQuery removes Billing form except billing default
+                    set_default_billing = form.cleaned_data.get(
+                        'set_default_billing')
+                    if set_default_billing:
+                        print('User set billing address as default')
+                        billing_address.default = True
+                        billing_address.save()
+                    # TODO
+
+                # Otherwise, if use_default_billing was selected,
+                # Search for an address with type 'B' and default=True
+                elif use_default_billing:
+                    print('Using default billing address')
+                    address_qs = Address.objects.filter(
+                        user=self.request.user,
+                        address_type='B',
+                        default=True
+                    )
+                    # If a default billing address exists, save it as this order's billing and save the order
+                    if address_qs.exists():
+                        billing_address = address_qs[0]
+                        order.billing_address = billing_address
+                        order.save()
+                    else:
+                        messages.info(
+                            self.request, 'No default billing address available')
+                        return redirect('core:checkout')
+
+                # If use_default_billing was not selected, enters new billing address
+                else:
+                    print("User is entering a new billing address")
+                    billing_address1 = form.cleaned_data.get(
+                        'billing_address')
+                    billing_address2 = form.cleaned_data.get(
+                        'billing_address2')
+                    billing_country = form.cleaned_data.get(
+                        'billing_country')
+                    billing_zip = form.cleaned_data.get('billing_zip')
+
+                    # Use is_valid_form() function to check for empty fields
+                    # Because some fields are required=False in forms.py
+                    if is_valid_form([billing_address1, billing_country, billing_zip]):
+                        # Enter form data into database
+                        billing_address = Address(
+                            user=self.request.user,
+                            street_address=billing_address1,
+                            apartment_address=billing_address2,
+                            country=billing_country,
+                            zip=billing_zip,
+                            address_type='B'
+                        )
+                        billing_address.save()
+                        # Store as billing address regardless of if/else
+                        order.billing_address = billing_address
+                        order.save()
+
+                        # Check if set billing default was checked,
+                        # and if so, set it as the default and save
+                        set_default_billing = form.cleaned_data.get(
+                            'set_default_billing')
+                        if set_default_billing:
+                            print('User set billing address as default')
+                            billing_address.default = True
+                            billing_address.save()
+                    else:
+                        messages.warning(
+                            self.request, "Please fill in the required billing address fields")
+                        return redirect('core:checkout')
 
                 payment_option = form.cleaned_data.get('payment_option')
-                billing_address = Address(
-                    user=self.request.user, street_address=street_address, apartment_address=apartment_address, country=country, zip=zip, address_type='B')
-                billing_address.save()
-                order.billing_address = billing_address
-                order.save()
-                # TODO: add redirect to the selected payment option
+
                 if payment_option == 'S':
                     return redirect('core:payment', payment_option='stripe')
                 elif payment_option == 'P':
