@@ -24,6 +24,14 @@
                   <!-- SHIPPING FORM -->
                     <h3 class="text-info">Shipping address</h3>
 
+                    <!--Use default shipping -->
+                    {% if default_shipping_address %}
+                        <div class="custom-control custom-checkbox">
+                          <input type="checkbox" name="use_default_shipping" class="custom-control-input" id="use_default_shipping">
+                          <label class="custom-control-label" for="use_default_shipping">Use default shipping address: {{default_shipping_address.street_address|truncatechars:20}}</label>
+                        </div>
+                    {% endif %}
+
                     <!-- HIDEABLE SHIPPING -->
                     <div class='hideable_shipping_form'>
                       <!--Address-->
@@ -65,34 +73,42 @@
                     </div>
                     <!-- HIDEABLE SHIPPING END -->
 
-                    <!--Use default shipping -->
-                      {% if default_shipping_address %}
-                        <div class="custom-control custom-checkbox">
-                          <input type="checkbox" name="use_default_shipping" class="custom-control-input" id="use_default_shipping">
-                          <label class="custom-control-label" for="use_default_shipping">Use default shipping address: {{default_shipping_address.street_address|truncatechars:20}}</label>
-                        </div>
-                      {% endif %}
 
                     <!-- Set as default shipping -->
+                    {% if default_shipping_address %}
+                    <div class="custom-control custom-checkbox hideable_shipping_form">
+                      <input type="checkbox" name="set_default_shipping" class="custom-control-input" id="set_default_shipping">
+                      <label class="custom-control-label" for="set_default_shipping">Save as new default shipping address</label>
+                    </div>
+                    {% else %}
                     <div class="custom-control custom-checkbox hideable_shipping_form">
                       <input type="checkbox" name="set_default_shipping" class="custom-control-input" id="set_default_shipping">
                       <label class="custom-control-label" for="set_default_shipping">Save as default shipping address</label>
                     </div>
+                    {% endif %}
+                    
 
                     <!-- Same shipping & billing-->
                     <div class="custom-control custom-checkbox">
                       <input type="checkbox" name="same_billing_address" class="custom-control-input" id="same_billing_address">
                       <label class="custom-control-label" for="same_billing_address">Billing address is the same as my shipping address</label>
                     </div>
-                    
-                    
+
                   <!-- SHIPPING FORM END -->
 
                   <hr>
 
                   <!-- BILLING FORM -->
+                    
+                    
+                      <h3 class="text-info samebilling">Billing address</h3>
+                      {% if default_billing_address %}
+                      <div class="custom-control custom-checkbox hide_default_billing">
+                        <input type="checkbox" name="use_default_billing" class="custom-control-input" id="use_default_billing">
+                        <label class="custom-control-label" for="use_default_billing">Use default billing address: {{default_billing_address.street_address|truncatechars:20}}</label>
+                      </div>
+                    {% endif %}
                     <div class='hideable_billing_form'>
-                      <h3 class="text-info">Billing address</h3>
                       <!--address-->
                       <div class="md-form mb-5">
                         <input type="text" name="billing_address" id="billing_address" class="form-control" placeholder="1234 Main St">
@@ -130,12 +146,7 @@
                         </div>
                       <!--Grid row COUNTRY/STATE/ZIP END-->
                     </div>  
-                    {% if default_billing_address %}
-                      <div class="custom-control custom-checkbox hide_default_billing">
-                        <input type="checkbox" name="use_default_billing" class="custom-control-input" id="use_default_billing">
-                        <label class="custom-control-label" for="use_default_billing">Use default billing address: {{default_billing_address.street_address|truncatechars:20}}</label>
-                      </div>
-                    {% endif %}
+                  
                     <div class="custom-control custom-checkbox hideable_billing_form">
                       <input type="checkbox" name="set_default_billing" class="custom-control-input" id="set_default_billing">
                       <label class="custom-control-label" for="set_default_billing">Save as default billing address</label>
@@ -185,54 +196,63 @@
   </body>
 {% endblock content %}
 
-{% block extra_scripts %}
+{% block extra_scripts1 %}
 <script>
   var hideable_shipping_form = $('.hideable_shipping_form');
   var hideable_billing_form = $('.hideable_billing_form');
   var hide_default_billing = $('.hide_default_billing');
+  var samebilling = $('.samebilling')
   
 
   var use_default_shipping = document.querySelector("input[name=use_default_shipping]")
   var use_default_billing = document.querySelector("input[name=use_default_billing]")
-  var same_billing_address = document.querySelector("input[name=same_billing_address")
+  var same_billing_address = document.querySelector("input[name=same_billing_address]")
   
   {% comment %} If default shipping is checked, hide shipping form {% endcomment %}
-  use_default_shipping.addEventListener('change', function(){
-    if (this.checked){
-      hideable_shipping_form.hide();
-      document.getElementById("set_default_shipping").checked = false
-    } else {
-      hideable_shipping_form.show();
-    }
-  })
-  {% comment %} SHOW NEW DIV DISPLAYING DEFAULT SHIPPING ADDRESS AND CHECKBOX {% endcomment %}
+  if (use_default_shipping != null){
+    use_default_shipping.addEventListener('change', function(){
+      if (this.checked){
+        hideable_shipping_form.hide();
+        document.getElementById("set_default_shipping").checked = false
+        console.log("Default Shipping!")
+        console.log(use_default_billing)
+      } else {
+        hideable_shipping_form.show();
+      }
+    })
+  }
 
-  {% comment %} If default billing is checked, hide billing form {% endcomment %}
-  use_default_billing.addEventListener('change', function(){
-    if (this.checked){
-      hideable_billing_form.hide();
-      document.getElementById("set_default_billing").checked = false
-      console.log("check!")
-    } else {
-      hideable_billing_form.show();
-    }
-  })
-  {% comment %} SHOW NEW DIV DISPLAYING DEFAULT BILLING ADDRESS AND CHECKBOX {% endcomment %}
+  if (use_default_billing != null){
+    use_default_billing.addEventListener('change', function(){
+      if (this.checked){
+        hideable_billing_form.hide();
+        document.getElementById("set_default_billing").checked = false
+        console.log("check!")
+      } else {
+        hideable_billing_form.show();
+      }
+    })
+  }
 
   same_billing_address.addEventListener('change', function(){
     if (this.checked){
       hideable_billing_form.hide();
       hide_default_billing.hide();
-      document.getElementById("use_default_billing").checked = false
-      
+      samebilling.hide();
+      if (use_default_billing != null){
+        document.getElementById("use_default_billing").checked = false
+      }
+      console.log("Same billing!")
     } else {
       hideable_billing_form.show();
       hide_default_billing.show();
+      samebilling.show();
     }
   })
 
 
-{% comment %} SHOW NEW DIV DISPLAYING SHIPPING AS YOU TYPE (AND CHECKBOX?) {% endcomment %}
+
+
 
 </script>
-{% endblock extra_scripts %}
+{% endblock extra_scripts1 %}

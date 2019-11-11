@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.shortcuts import reverse
 from django_countries.fields import CountryField
+from django.db.models.signals import post_save
 
 # Tuple - first entry goes into database, second entry is displayed
 CATEGORY_CHOICES = (
@@ -21,7 +22,16 @@ ADDRESS_CHOICES = (
     ('S', 'Shipping')
 )
 
-# Consider figuring out how to conditionally disabling link/button
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # Stripe customer id is created if the user chooses to save their card information
+    stripe_customer_id = models.CharField(max_length=50, blank=True, null=True)
+    one_click_purchasing = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
 
 
 class Item(models.Model):
@@ -115,24 +125,11 @@ class Order(models.Model):
         return total
 
 
-'''
-Order Management System: Order Life-Cycle
-1. Item(s) added to cart
-2. Adding a billing address
-(Failed Checkout)
-3. Payment
-(Preprocessing, processing, packaging, etc.)
-4. Being delivered (tracker/order status)
-5. Order received
-6. Refunds
-'''
-
-
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
     street_address = models.CharField(max_length=100)
-    apartment_address = models.CharField(max_length=100)
+    apartment_address = models.CharField(max_length=100, blank=True, null=True)
     country = CountryField(multiple=False)
     zip = models.CharField(max_length=100)
     address_type = models.CharField(max_length=1, choices=ADDRESS_CHOICES)
@@ -154,6 +151,7 @@ class Payment(models.Model):
                              on_delete=models.SET_NULL, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     timestamp = models.DateTimeField(auto_now_add=True)
+    default = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
@@ -175,3 +173,13 @@ class Refund(models.Model):
 
     def __str__(self):
         return f"{self.pk}"
+
+
+# Use post_save signal to create the user profile when a user is created
+# Takes in sender, a user instance/object, whether a user has been created, and kwargs
+def userprofile_receiver(sender, instance, created, *args, **kwargs):
+    if created:
+        userprofile = UserProfile.objects.create(user=instance)
+
+
+post_save.connect(userprofile_receiver, sender=settings.AUTH_USER_MODEL)

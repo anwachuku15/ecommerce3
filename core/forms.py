@@ -83,3 +83,10 @@ class RefundForm(forms.Form):
         'rows': 4
     }))
     email = forms.EmailField()
+
+
+class PaymentForm(forms.Form):
+    set_default_card = forms.BooleanField(
+        widget=forms.CheckboxInput(), required=False)
+    save_card = forms.BooleanField(
+        widget=forms.CheckboxInput(), required=False)

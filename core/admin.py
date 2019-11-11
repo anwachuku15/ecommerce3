@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 # Register your models here.
 from .models import *
 
@@ -82,3 +83,4 @@ admin.site.register(Payment)
 admin.site.register(Coupon)
 admin.site.register(Refund)
 admin.site.register(Address, AddressAdmin)
+admin.site.register(UserProfile)
