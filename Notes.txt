@@ -1,0 +1,11 @@
+11/12/19 - ADDING REACT
+- Convert project functionally into Django REST framework equivalent
+- Accept POST/GET requests on React frontend
+
+Project
+    - Django REST Framework
+    - Stripe API
+
+
+Git steps
+https://www.youtube.com/watch?v=Fk12ELJ9Bww
