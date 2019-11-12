@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'rest_framework',
 
     'django.contrib.sites',
     'allauth',
@@ -105,3 +106,11 @@ if ENVIRONMENT == 'production':
 
 STRIPE_SECRET_KEY = 'sk_test_ZPbkkDYPkKvPC2TyqHB2RUyE00gNeWULdz'
 STRIPE_PUBLISHABLE_KEY = 'pk_test_uG4OK36kbeaC0IcN4FVqc7Cw00HRtkvEjp'
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
